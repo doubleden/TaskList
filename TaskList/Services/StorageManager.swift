@@ -44,9 +44,13 @@ final class StorageManager {
     
     func deleteTask(at index: Int) {
         let removedTask = taskList.remove(at: index)
-        
-        let context = persistentContainer.viewContext
-        context.delete(removedTask)
+        persistentContainer.viewContext.delete(removedTask)
+        saveContext()
+    }
+    
+    func edit(_ taskName: String, at index: Int) {
+        let task = taskList[index]
+        task.title = taskName
         saveContext()
     }
     

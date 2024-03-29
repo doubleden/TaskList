@@ -20,27 +20,16 @@ final class TaskListViewController: UITableViewController {
     }
     
     @objc private func addNewTask() {
-        showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
-    }
-    
-    private func showAlert(withTitle title: String, andMessage message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        
-        let okAction = UIAlertAction(title: "OK", style: .default) { [unowned self] _ in
-            guard let inputText = alert.textFields?.first?.text, !inputText.isEmpty else { return }
+        showAlert(
+            withTitle: "New Task",
+            message: "What do you want to do?",
+            AndPlaceholder: "New Task"
+        ) { [unowned self] inputText in
             data.save(inputText)
             
             let indexPath = IndexPath(row: data.taskList.count - 1, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
         }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
-        alert.addAction(okAction)
-        alert.addAction(cancelAction)
-        alert.addTextField { textField in
-            textField.placeholder = "New Task"
-        }
-        present(alert, animated: true)
     }
 }
 
@@ -74,6 +63,43 @@ extension TaskListViewController {
         
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
         return configuration
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let task = data.taskList[indexPath.row]
+        
+        showAlert(
+            withTitle: "Edit Task",
+            message: "What you want to change in to do?",
+            AndPlaceholder: task.title ?? "") { [unowned self] inputText in
+                data.edit(inputText, at: indexPath.row)
+                tableView.reloadData()
+            }
+    }
+}
+
+// MARK: - Private Methods
+private extension TaskListViewController {
+    func showAlert(
+        withTitle title: String,
+        message: String,
+        AndPlaceholder: String,
+        completion: ((_ inputText: String) -> Void)?
+    ) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        
+        let okAction = UIAlertAction(title: "OK", style: .default) { _ in
+            guard let inputText = alert.textFields?.first?.text, !inputText.isEmpty else { return }
+            completion?(inputText)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        alert.addAction(okAction)
+        alert.addAction(cancelAction)
+        alert.addTextField { textField in
+            textField.placeholder = AndPlaceholder
+        }
+        present(alert, animated: true)
     }
 }
 
