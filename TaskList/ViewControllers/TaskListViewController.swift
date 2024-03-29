@@ -9,14 +9,14 @@ import UIKit
 
 final class TaskListViewController: UITableViewController {
     private let cellID = "task"
-    private let data = StorageManager.shared
+    private let storageManager = StorageManager.shared
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupNavigationBar()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
-        data.fetchData()
+        storageManager.fetchData()
     }
     
     @objc private func addNewTask() {
@@ -25,9 +25,8 @@ final class TaskListViewController: UITableViewController {
             message: "What do you want to do?",
             AndPlaceholder: "New Task"
         ) { [unowned self] inputText in
-            data.save(inputText)
-            
-            let indexPath = IndexPath(row: data.taskList.count - 1, section: 0)
+            storageManager.save(inputText)
+            let indexPath = IndexPath(row: storageManager.taskList.count - 1, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
         }
     }
@@ -36,18 +35,17 @@ final class TaskListViewController: UITableViewController {
 // MARK: - UITableViewDataSource
 extension TaskListViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        data.taskList.count
+        storageManager.taskList.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellID, for: indexPath)
-        let task = data.taskList[indexPath.row]
+        let task = storageManager.taskList[indexPath.row]
         var content = cell.defaultContentConfiguration()
         content.text = task.title
         cell.contentConfiguration = content
         return cell
     }
-    
 }
 
 // MARK: - UITableViewDelegate
@@ -57,7 +55,7 @@ extension TaskListViewController {
             style: .destructive,
             title: "Delete"
         ) { [unowned self] _, _, _ in
-            data.deleteTask(at: indexPath.row)
+            storageManager.deleteTask(at: indexPath.row)
             tableView.reloadData()
         }
         
@@ -66,13 +64,13 @@ extension TaskListViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let task = data.taskList[indexPath.row]
+        let task = storageManager.taskList[indexPath.row]
         
         showAlert(
             withTitle: "Edit Task",
-            message: "What you want to change in to do?",
+            message: "What do you want to change in to do?",
             AndPlaceholder: task.title ?? "") { [unowned self] inputText in
-                data.edit(inputText, at: indexPath.row)
+                storageManager.edit(inputText, at: indexPath.row)
                 tableView.reloadData()
             }
     }
