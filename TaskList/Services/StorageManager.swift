@@ -9,6 +9,8 @@ import CoreData
 
 final class StorageManager {
     
+    var taskList: [ToDoTask] = []
+    
     static let shared = StorageManager()
     
     let persistentContainer: NSPersistentContainer = {
@@ -22,6 +24,31 @@ final class StorageManager {
     }()
     
     private init() {}
+    
+    func fetchData() {
+        let fetchRequest = ToDoTask.fetchRequest()
+        
+        do {
+            taskList = try persistentContainer.viewContext.fetch(fetchRequest)
+        } catch {
+            print(error)
+        }
+    }
+    
+    func save(_ taskName: String) {
+        let task = ToDoTask(context: persistentContainer.viewContext)
+        task.title = taskName
+        taskList.append(task)
+        saveContext()
+    }
+    
+    func deleteTask(at index: Int) {
+        let removedTask = taskList.remove(at: index)
+        
+        let context = persistentContainer.viewContext
+        context.delete(removedTask)
+        saveContext()
+    }
     
     func saveContext() {
         let context = persistentContainer.viewContext
