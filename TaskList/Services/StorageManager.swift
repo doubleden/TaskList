@@ -13,7 +13,11 @@ final class StorageManager {
     
     static let shared = StorageManager()
     
-    let persistentContainer: NSPersistentContainer = {
+    private var context: NSManagedObjectContext {
+        persistentContainer.viewContext
+    }
+    
+    private let persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "TaskList")
         container.loadPersistentStores { _, error in
             if let error = error as NSError? {
@@ -29,33 +33,14 @@ final class StorageManager {
         let fetchRequest = ToDoTask.fetchRequest()
         
         do {
-            taskList = try persistentContainer.viewContext.fetch(fetchRequest)
+            taskList = try context.fetch(fetchRequest)
         } catch {
             print(error)
         }
     }
     
-    func save(_ taskName: String) {
-        let task = ToDoTask(context: persistentContainer.viewContext)
-        task.title = taskName
-        taskList.append(task)
-        saveContext()
-    }
-    
-    func deleteTask(at index: Int) {
-        let removedTask = taskList.remove(at: index)
-        persistentContainer.viewContext.delete(removedTask)
-        saveContext()
-    }
-    
-    func edit(_ taskName: String, at index: Int) {
-        let task = taskList[index]
-        task.title = taskName
-        saveContext()
-    }
-    
     func saveContext() {
-        let context = persistentContainer.viewContext
+        let context = context
         if context.hasChanges {
             do {
                 try context.save()
@@ -66,4 +51,22 @@ final class StorageManager {
         }
     }
     
+    func save(_ taskName: String) {
+        let task = ToDoTask(context: context)
+        task.title = taskName
+        taskList.append(task)
+        saveContext()
+    }
+    
+    func deleteTask(at index: Int) {
+        let removedTask = taskList.remove(at: index)
+        context.delete(removedTask)
+        saveContext()
+    }
+    
+    func edit(_ taskName: String, at index: Int) {
+        let task = taskList[index]
+        task.title = taskName
+        saveContext()
+    }
 }
