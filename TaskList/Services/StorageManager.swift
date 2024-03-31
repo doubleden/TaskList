@@ -40,7 +40,6 @@ final class StorageManager {
     }
     
     func saveContext() {
-        let context = context
         if context.hasChanges {
             do {
                 try context.save()
