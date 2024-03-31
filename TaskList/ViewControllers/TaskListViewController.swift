@@ -73,6 +73,7 @@ extension TaskListViewController {
                 storageManager.edit(inputText, at: indexPath.row)
                 tableView.reloadData()
             }
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
