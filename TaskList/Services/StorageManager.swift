@@ -9,8 +9,6 @@ import CoreData
 
 final class StorageManager {
     
-    var taskList: [ToDoTask] = []
-    
     static let shared = StorageManager()
     
     private var context: NSManagedObjectContext {
@@ -29,11 +27,14 @@ final class StorageManager {
     
     private init() {}
     
-    func fetchData() {
+    func fetchData(_ completion: @escaping([ToDoTask]) -> Void) {
         let fetchRequest = ToDoTask.fetchRequest()
-        
+        var taskList: [ToDoTask] = []
         do {
             taskList = try context.fetch(fetchRequest)
+            DispatchQueue.main.async {
+                completion(taskList)
+            }
         } catch {
             print(error)
         }
@@ -50,22 +51,20 @@ final class StorageManager {
         }
     }
     
-    func save(_ taskName: String) {
+    func save(_ taskName: String) -> ToDoTask {
         let task = ToDoTask(context: context)
         task.title = taskName
-        taskList.append(task)
+        saveContext()
+        return task
+    }
+    
+    func delete(_ task: ToDoTask) {
+        context.delete(task)
         saveContext()
     }
     
-    func deleteTask(at index: Int) {
-        let removedTask = taskList.remove(at: index)
-        context.delete(removedTask)
-        saveContext()
-    }
-    
-    func edit(_ taskName: String, at index: Int) {
-        let task = taskList[index]
-        task.title = taskName
+    func edit(_ task: ToDoTask, with newTask: String) {
+        task.title = newTask
         saveContext()
     }
 }

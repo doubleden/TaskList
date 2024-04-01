@@ -10,23 +10,26 @@ import UIKit
 final class TaskListViewController: UITableViewController {
     private let cellID = "task"
     private let storageManager = StorageManager.shared
+    private var taskList: [ToDoTask] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupNavigationBar()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
-        storageManager.fetchData()
+        
+        storageManager.fetchData { [unowned self] taskList in
+            self.taskList.append(contentsOf: taskList)
+            tableView.reloadData()
+        }
     }
     
     @objc private func addNewTask() {
         showAlert(
             withTitle: "New Task",
-            message: "What do you want to do?",
-            AndPlaceholder: "New Task"
-        ) { [unowned self] inputText in
-            storageManager.save(inputText)
-            let indexPath = IndexPath(row: storageManager.taskList.count - 1, section: 0)
+            message: "What do you want to do?") { [unowned self] inputText in
+            taskList.append(storageManager.save(inputText))
+            let indexPath = IndexPath(row: taskList.count - 1, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
         }
     }
@@ -35,12 +38,12 @@ final class TaskListViewController: UITableViewController {
 // MARK: - UITableViewDataSource
 extension TaskListViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        storageManager.taskList.count
+        taskList.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellID, for: indexPath)
-        let task = storageManager.taskList[indexPath.row]
+        let task = taskList[indexPath.row]
         var content = cell.defaultContentConfiguration()
         content.text = task.title
         cell.contentConfiguration = content
@@ -55,8 +58,9 @@ extension TaskListViewController {
             style: .destructive,
             title: "Delete"
         ) { [unowned self] _, _, _ in
-            storageManager.deleteTask(at: indexPath.row)
-            tableView.reloadData()
+            storageManager.delete(taskList[indexPath.row])
+            taskList.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .automatic)
         }
         
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
@@ -64,15 +68,13 @@ extension TaskListViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let task = storageManager.taskList[indexPath.row]
-        
         showAlert(
             withTitle: "Edit Task",
-            message: "What do you want to change in to do?",
-            AndPlaceholder: task.title ?? "") { [unowned self] inputText in
-                storageManager.edit(inputText, at: indexPath.row)
-                tableView.reloadData()
+            message: "What do you want to change in to do?") { [unowned self] inputText in
+                storageManager.edit(taskList[indexPath.row], with: inputText)
+                tableView.reloadRows(at: [indexPath], with: .automatic)
             }
+        
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }
@@ -82,7 +84,6 @@ private extension TaskListViewController {
     func showAlert(
         withTitle title: String,
         message: String,
-        AndPlaceholder: String,
         completion: ((_ inputText: String) -> Void)?
     ) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -96,7 +97,7 @@ private extension TaskListViewController {
         alert.addAction(okAction)
         alert.addAction(cancelAction)
         alert.addTextField { textField in
-            textField.placeholder = AndPlaceholder
+            textField.placeholder = title
         }
         present(alert, animated: true)
     }
